@@ -260,8 +260,7 @@ impl AdminAuth {
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(AuthError::ApiError(format!(
-                "Failed to get user: {}",
-                error_text
+                "Failed to get user: {error_text}"
             )));
         }
 
@@ -323,8 +322,7 @@ impl AdminAuth {
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(AuthError::ApiError(format!(
-                "Failed to list users: {}",
-                error_text
+                "Failed to list users: {error_text}"
             )));
         }
 
@@ -413,8 +411,7 @@ impl AdminAuth {
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(AuthError::ApiError(format!(
-                "Failed to create user: {}",
-                error_text
+                "Failed to create user: {error_text}",
             )));
         }
 
@@ -470,8 +467,7 @@ impl AdminAuth {
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(AuthError::ApiError(format!(
-                "Failed to delete user: {}",
-                error_text
+                "Failed to delete user: {error_text}"
             )));
         }
 
@@ -540,8 +536,7 @@ impl AdminAuth {
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(AuthError::ApiError(format!(
-                "Failed to update user: {}",
-                error_text
+                "Failed to update user: {error_text}"
             )));
         }
 
@@ -614,8 +609,7 @@ impl AdminAuth {
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(AuthError::ApiError(format!(
-                "Failed to invite user: {}",
-                error_text
+                "Failed to invite user: {error_text}"
             )));
         }
 
@@ -679,8 +673,7 @@ impl AdminAuth {
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(AuthError::ApiError(format!(
-                "Failed to delete user factor: {}",
-                error_text
+                "Failed to delete user factor: {error_text}"
             )));
         }
 
@@ -752,8 +745,7 @@ impl AdminAuth {
         if !response.status().is_success() {
             let error_text = response.text().await.unwrap_or_default();
             return Err(AuthError::ApiError(format!(
-                "Failed to generate link: {}",
-                error_text
+                "Failed to generate link: {error_text}"
             )));
         }
 
@@ -1322,7 +1314,7 @@ impl Auth {
             .http_client
             .get(&url)
             .header("apikey", &self.key)
-            .header("Authorization", format!("Bearer {}", token))
+            .header("Authorization", format!("Bearer {token}"))
             .send()
             .await?;
 

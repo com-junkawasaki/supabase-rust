@@ -124,7 +124,7 @@ impl RealtimeClient {
 
     /// 特定のトピックに対するチャンネルビルダーを作成
     #[instrument(skip(self))]
-    pub fn channel(&self, topic: &str) -> ChannelBuilder {
+    pub fn channel(&self, topic: &str) -> ChannelBuilder<'_> {
         info!(?topic, "Creating channel builder");
         ChannelBuilder::new(self, topic)
     }
@@ -176,7 +176,7 @@ impl RealtimeClient {
             let token_guard = token_arc.read().await;
             let token_param = token_guard
                 .as_ref()
-                .map(|t| format!("&token={}", t))
+                .map(|t| format!("&token={t}"))
                 .unwrap_or_default();
             debug!(token_present = token_guard.is_some(), "Read auth token");
             drop(token_guard); // Release lock
@@ -209,8 +209,7 @@ impl RealtimeClient {
                     )
                     .await;
                     return Err(RealtimeError::ConnectionError(format!(
-                        "Unsupported URL scheme: {}",
-                        s
+                        "Unsupported URL scheme: {s}"
                     )));
                 }
             };
@@ -277,8 +276,7 @@ impl RealtimeClient {
                     )
                     .await;
                     return Err(RealtimeError::ConnectionError(format!(
-                        "WebSocket connection failed: {}",
-                        e
+                        "WebSocket connection failed: {e}"
                     )));
                 }
             };
@@ -661,8 +659,7 @@ impl RealtimeClient {
             socket_tx.send(ws_message).await.map_err(|e| {
                 error!(error = %e, "Failed to send message via MPSC channel");
                 RealtimeError::ConnectionError(format!(
-                    "Failed to send message via MPSC channel: {}",
-                    e
+                    "Failed to send message via MPSC channel: {e}"
                 ))
             })
         } else {
@@ -696,6 +693,6 @@ impl Clone for RealtimeClient {
 // Convert MPSC send error to RealtimeError
 impl From<tokio::sync::mpsc::error::SendError<Message>> for RealtimeError {
     fn from(err: tokio::sync::mpsc::error::SendError<Message>) -> Self {
-        RealtimeError::ConnectionError(format!("Failed to send message to socket task: {}", err))
+        RealtimeError::ConnectionError(format!("Failed to send message to socket task: {err}"))
     }
 }

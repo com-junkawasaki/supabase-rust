@@ -4,15 +4,17 @@ use std::env;
 use std::fs::File as StdFile;
 use std::io::{Read, Write};
 use std::path::Path;
-use supabase_rust_gftd::storage::{FileObject, FileOptions, ImageTransformOptions, ListOptions};
-use supabase_rust_gftd::Supabase;
+use supabase_rust_client::client::SupabaseConfig;
+use supabase_rust_client::SupabaseClientWrapper;
+use supabase_rust_storage::{FileObject, FileOptions, ImageTransformOptions, ListOptions};
 use tempfile::NamedTempFile;
 
 mod image_transform_examples {
     use std::env;
     use std::io::Write;
-    use supabase_rust_gftd::storage::{FileOptions, ImageTransformOptions};
-    use supabase_rust_gftd::Supabase;
+    use supabase_rust_client::client::SupabaseConfig;
+    use supabase_rust_client::SupabaseClientWrapper;
+    use supabase_rust_storage::{FileOptions, ImageTransformOptions};
     use tempfile::NamedTempFile;
 
     pub async fn run_image_transform_examples(
@@ -39,8 +41,10 @@ mod image_transform_examples {
         let upload_path = "test-transform-image.jpg";
 
         // Supabaseクライアントの初期化
-        let supabase = Supabase::new(&supabase_url, &supabase_key);
-        let storage = supabase.storage();
+        let config = SupabaseConfig::new(supabase_url.as_str(), supabase_key)?;
+        let supabase = SupabaseClientWrapper::new(config)?;
+
+        let storage = supabase.storage;
 
         println!("\n=== 画像変換機能の例 ===\n");
 
@@ -49,7 +53,7 @@ mod image_transform_examples {
         let bucket_exists = buckets.iter().any(|b| b.name == bucket_name);
 
         if !bucket_exists {
-            println!("バケット '{}' を作成します...", bucket_name);
+            println!("バケット '{bucket_name}' を作成します...");
             storage.create_bucket(bucket_name, true).await?;
             println!("バケットを作成しました。");
         }
@@ -99,7 +103,7 @@ mod image_transform_examples {
         println!("\n画像変換の例:");
 
         for (name, options) in transform_options {
-            println!("\n{} の変換:", name);
+            println!("\n{name} の変換:");
 
             // 変換画像を取得
             let transformed_image = storage
@@ -114,7 +118,7 @@ mod image_transform_examples {
                 .from(bucket_name)
                 .get_public_transform_url(upload_path, options.clone());
 
-            println!("公開URL: {}", public_url);
+            println!("公開URL: {public_url}");
 
             // 変換画像の署名付きURLを取得
             let signed_url = storage
@@ -122,7 +126,7 @@ mod image_transform_examples {
                 .create_signed_transform_url(upload_path, options, 60)
                 .await?;
 
-            println!("署名付きURL (有効期限60秒): {}", signed_url);
+            println!("署名付きURL (有効期限60秒): {signed_url}");
         }
 
         // クリーンアップ
@@ -137,12 +141,12 @@ mod image_transform_examples {
 
 /// S3互換APIの例を実行
 async fn run_s3_compatible_example(
-    supabase: &Supabase,
+    supabase: SupabaseClientWrapper,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("\n=== S3互換APIの例 ===\n");
 
     // S3互換オプションを設定
-    let s3_options = supabase_rust_gftd::storage::s3::S3Options {
+    let s3_options = supabase_rust_storage::s3::S3Options {
         access_key_id: "your-access-key".to_string(), // 実際の環境では適切な値に置き換えてください
         secret_access_key: "your-secret-key".to_string(), // 実際の環境では適切な値に置き換えてください
         region: Some("auto".to_string()),
@@ -150,7 +154,7 @@ async fn run_s3_compatible_example(
     };
 
     // S3互換クライアントを取得
-    let storage_client = supabase.storage();
+    let storage_client = supabase.storage;
     let bucket_client = storage_client.from("test-bucket");
     let s3_client = bucket_client.s3_compatible(s3_options);
 
@@ -192,21 +196,21 @@ async fn run_s3_compatible_example(
     println!("Downloading file via S3 compatible API...");
     let downloaded_data = s3_client.get_object("s3-test/test.txt").await?;
     let downloaded_text = String::from_utf8_lossy(&downloaded_data);
-    println!("Downloaded content: {}", downloaded_text);
+    println!("Downloaded content: {downloaded_text}");
 
     // メタデータを取得
     println!("Retrieving file metadata...");
     let metadata = s3_client.head_object("s3-test/test.txt").await?;
-    println!("File metadata: {:?}", metadata);
+    println!("File metadata: {metadata:?}");
 
     // 複数のファイルをアップロード
     println!("Uploading multiple files...");
     for i in 1..4 {
-        let content = format!("This is file number {}", i);
+        let content = format!("This is file number {i}");
         let bytes = Bytes::from(content.into_bytes());
         s3_client
             .put_object(
-                &format!("s3-test/multiple/file{}.txt", i),
+                &format!("s3-test/multiple/file{i}.txt"),
                 bytes,
                 Some("text/plain".to_string()),
                 None,
@@ -219,7 +223,7 @@ async fn run_s3_compatible_example(
     let objects = s3_client
         .list_objects(Some("s3-test/multiple/"), None, None)
         .await?;
-    println!("Objects in directory: {:?}", objects);
+    println!("Objects in directory: {objects:?}");
 
     // オブジェクトを削除
     println!("Deleting objects...");
@@ -231,7 +235,7 @@ async fn run_s3_compatible_example(
 
 /// 基本的なストレージ操作の例を実行
 async fn run_basic_storage_operations(
-    storage: &supabase_rust_gftd::storage::StorageClient,
+    storage: &supabase_rust_storage::StorageClient,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("\n=== 基本的なストレージ操作の例 ===\n");
 
@@ -255,7 +259,7 @@ async fn run_basic_storage_operations(
     // バケットが存在するか確認し、なければ作成
     let bucket_exists = buckets.iter().any(|b| b.name == bucket_name);
     if !bucket_exists {
-        println!("バケット '{}' を作成します...", bucket_name);
+        println!("バケット '{bucket_name}' を作成します...");
         storage.create_bucket(bucket_name, true).await?;
         println!("バケットを作成しました。");
     }
@@ -274,7 +278,7 @@ async fn run_basic_storage_operations(
     println!("ファイルをアップロードしました: {}", upload_result.name);
 
     // バケット内のファイル一覧を取得
-    println!("\nバケット '{}' のファイル一覧を取得中...", bucket_name);
+    println!("\nバケット '{bucket_name}' のファイル一覧を取得中...");
     let list_options = ListOptions::new().limit(10).offset(0);
     let files = storage
         .from(bucket_name)
@@ -293,14 +297,14 @@ async fn run_basic_storage_operations(
 
     // ファイルの公開URLを取得
     let public_url = storage.from(bucket_name).get_public_url(upload_path);
-    println!("\n公開URL: {}", public_url);
+    println!("\n公開URL: {public_url}");
 
     // ファイルの署名付きURLを取得
     let signed_url = storage
         .from(bucket_name)
         .create_signed_url(upload_path, 60) // 60秒間有効なURL
         .await?;
-    println!("署名付きURL (有効期限60秒): {}", signed_url);
+    println!("署名付きURL (有効期限60秒): {signed_url}");
 
     // ファイルをダウンロード
     println!("\nファイルをダウンロードしています...");
@@ -312,10 +316,7 @@ async fn run_basic_storage_operations(
     // ダウンロードした内容をファイルに保存（オプション）
     // let mut download_file = StdFile::create("downloaded-test-file.txt")?;\n    // download_file.write_all(&download_data)?;\n\n    // ファイルを移動
     let move_destination = "moved/test-file.txt";
-    println!(
-        "\nファイルを移動しています: {} -> {}",
-        upload_path, move_destination
-    );
+    println!("\nファイルを移動しています: {upload_path} -> {move_destination}");
     storage
         .from(bucket_name)
         .move_object(upload_path, move_destination)
@@ -331,7 +332,7 @@ async fn run_basic_storage_operations(
                 println!("- {}", file.name);
             }
         }
-        Err(e) => println!("移動先ディレクトリのリスト取得エラー: {}", e),
+        Err(e) => println!("移動先ディレクトリのリスト取得エラー: {e}"),
     }
 
     // ファイルを削除
@@ -345,7 +346,7 @@ async fn run_basic_storage_operations(
         Ok(_) => {
             println!("指定されたファイルが正常に削除されました。");
         }
-        Err(e) => println!("ファイル削除エラー: {}", e),
+        Err(e) => println!("ファイル削除エラー: {e}"),
     }
 
     // バケットを空にする
@@ -366,7 +367,7 @@ async fn run_basic_storage_operations(
 
 /// 大容量ファイルのアップロード例を実行
 async fn run_large_file_upload(
-    storage: &supabase_rust_gftd::storage::StorageClient,
+    storage: &supabase_rust_storage::StorageClient,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("\n=== 大容量ファイルのアップロード例 ===\n");
 
@@ -378,9 +379,9 @@ async fn run_large_file_upload(
     let bucket_exists = buckets.iter().any(|b| b.name == bucket_name);
 
     if !bucket_exists {
-        println!("バケット '{}' を作成します...", bucket_name);
+        println!("バケット '{bucket_name}' を作成します...");
         storage.create_bucket(bucket_name, true).await?;
-        println!("バケットを作成しました: {}", bucket_name);
+        println!("バケットを作成しました: {bucket_name}");
     }
 
     // 大きなテストファイルを作成 (5MB)
@@ -440,30 +441,27 @@ fn handle_result<T: std::fmt::Debug>(
     result: Result<T, Box<dyn std::error::Error>>,
 ) {
     match result {
-        Ok(data) => println!("[OK] {}: {:?}", operation, data),
-        Err(e) => println!("[FAIL] {}: {}", operation, e),
+        Ok(data) => println!("[OK] {operation}: {data:?}"),
+        Err(e) => println!("[FAIL] {operation}: {e}"),
     }
 }
 
 // Function to test public bucket operations
 #[allow(dead_code)] // Allow dead code for example test function
 async fn test_public_operations(
-    storage: &supabase_rust_gftd::storage::StorageClient,
+    storage: &supabase_rust_storage::StorageClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let bucket_name = "public-example-bucket";
-    println!(
-        "\n--- Testing Public Operations in bucket: {} ---",
-        bucket_name
-    );
+    println!("\n--- Testing Public Operations in bucket: {bucket_name} ---");
 
     // Ensure bucket exists (publicly accessible bucket creation)
     match storage.create_bucket(bucket_name, true).await {
-        Ok(_) => println!("Public Bucket '{}' created or already exists.", bucket_name),
+        Ok(_) => println!("Public Bucket '{bucket_name}' created or already exists."),
         Err(e) => {
             if !e.to_string().contains("Duplicate") {
-                return Err(format!("Failed to ensure public bucket exists: {}", e).into());
+                return Err(format!("Failed to ensure public bucket exists: {e}").into());
             }
-            println!("Public Bucket '{}' already exists.", bucket_name);
+            println!("Public Bucket '{bucket_name}' already exists.");
         }
     }
 
@@ -474,7 +472,7 @@ async fn test_public_operations(
     tokio::fs::write(local_file_path, "This is a public file.").await?;
     let upload_options = FileOptions::new().with_content_type("text/plain");
 
-    println!("Attempting public upload to: {}", upload_path);
+    println!("Attempting public upload to: {upload_path}");
     let upload_result = storage
         .from(bucket_name)
         .upload(upload_path, local_file_path, Some(upload_options))
@@ -504,15 +502,15 @@ async fn test_public_operations(
             println!("- {} (サイズ: {} バイト)", file.name, size);
         }
     }
-    println!("[INFO] Public List Result: {:?}", files_result);
+    println!("[INFO] Public List Result: {files_result:?}");
 
     // 3. Get Public URL
-    println!("Getting public URL for: {}", upload_path);
+    println!("Getting public URL for: {upload_path}");
     let public_url = storage.from(bucket_name).get_public_url(upload_path);
-    println!("Public URL: {}", public_url);
+    println!("Public URL: {public_url}");
 
     // 4. Public Download (using public URL is typical, but testing direct download)
-    println!("Attempting public download of: {}", upload_path);
+    println!("Attempting public download of: {upload_path}");
     let download_result = storage.from(bucket_name).download(upload_path).await;
     handle_result(
         "Public Download",
@@ -522,9 +520,9 @@ async fn test_public_operations(
     );
 
     // 5. Public Remove (if permissions allow)
-    println!("Attempting public remove of: {}", upload_path);
+    println!("Attempting public remove of: {upload_path}");
     let remove_result = storage.from(bucket_name).remove(vec![upload_path]).await;
-    println!("[INFO] Public Remove Result: {:?}", remove_result);
+    println!("[INFO] Public Remove Result: {remove_result:?}");
 
     Ok(())
 }
@@ -532,22 +530,19 @@ async fn test_public_operations(
 // Function to test image transformations
 #[allow(dead_code)] // Allow dead code for example test function
 async fn test_image_transformations(
-    storage: &supabase_rust_gftd::storage::StorageClient,
+    storage: &supabase_rust_storage::StorageClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let bucket_name = "image-transform-bucket";
-    println!(
-        "\n--- Testing Image Transformations in bucket: {} ---",
-        bucket_name
-    );
+    println!("\n--- Testing Image Transformations in bucket: {bucket_name} ---");
 
     // Ensure bucket exists (public for easy access in example)
     match storage.create_bucket(bucket_name, true).await {
-        Ok(_) => println!("Image Bucket '{}' created or already exists.", bucket_name),
+        Ok(_) => println!("Image Bucket '{bucket_name}' created or already exists."),
         Err(e) => {
             if !e.to_string().contains("Duplicate") {
-                return Err(format!("Failed to ensure image bucket exists: {}", e).into());
+                return Err(format!("Failed to ensure image bucket exists: {e}").into());
             }
-            println!("Image Bucket '{}' already exists.", bucket_name);
+            println!("Image Bucket '{bucket_name}' already exists.");
         }
     }
 
@@ -561,7 +556,7 @@ async fn test_image_transformations(
     drop(temp_file);
 
     // Upload the image
-    println!("Uploading image: {}", image_path);
+    println!("Uploading image: {image_path}");
     let upload_options = FileOptions::new().with_content_type("image/png");
     storage
         .from(bucket_name)
@@ -574,11 +569,11 @@ async fn test_image_transformations(
         .with_width(100)
         .with_height(100)
         .with_resize("cover");
-    println!("Getting public transform URL for: {}", image_path);
+    println!("Getting public transform URL for: {image_path}");
     let transform_url = storage
         .from(bucket_name)
         .get_public_transform_url(image_path, transform_options.clone());
-    println!("Public Transform URL: {}", transform_url);
+    println!("Public Transform URL: {transform_url}");
 
     // 2. Create Signed Transform URL (requires auth if bucket is private)
     // Since bucket is public, let's test creating it anyway
@@ -586,7 +581,7 @@ async fn test_image_transformations(
         .with_width(50)
         .with_quality(75)
         .with_format("webp");
-    println!("Creating signed transform URL for: {}", image_path);
+    println!("Creating signed transform URL for: {image_path}");
     let signed_transform_result = storage
         .from(bucket_name)
         .create_signed_transform_url(image_path, signed_transform_options, 3600) // 1 hour expiry
@@ -610,30 +605,27 @@ async fn test_image_transformations(
     );
 
     // Cleanup: Remove the image
-    println!("Cleaning up: Removing image {}", image_path);
+    println!("Cleaning up: Removing image {image_path}");
     storage.from(bucket_name).remove(vec![image_path]).await?;
 
     Ok(())
 }
 
 async fn test_authenticated_operations(
-    supabase: &Supabase,
+    supabase: SupabaseClientWrapper,
 ) -> Result<(), Box<dyn std::error::Error>> {
     let bucket_name = "authenticated-bucket";
-    println!(
-        "\n--- Testing Authenticated Operations in bucket: {} ---",
-        bucket_name
-    );
-    let storage = supabase.storage();
+    println!("\n--- Testing Authenticated Operations in bucket: {bucket_name} ---");
+    let storage = supabase.storage;
 
     // Ensure bucket exists (authenticated bucket creation)
     match storage.create_bucket(bucket_name, false).await {
-        Ok(_) => println!("Bucket '{}' created or already exists.", bucket_name),
+        Ok(_) => println!("Bucket '{bucket_name}' created or already exists."),
         Err(e) => {
             if !e.to_string().contains("Duplicate") {
-                return Err(format!("Failed to ensure bucket exists: {}", e).into());
+                return Err(format!("Failed to ensure bucket exists: {e}").into());
             }
-            println!("Bucket '{}' already exists.", bucket_name);
+            println!("Bucket '{bucket_name}' already exists.");
         }
     }
 
@@ -644,12 +636,12 @@ async fn test_authenticated_operations(
     tokio::fs::write(temp_path, "This is a secret file.").await?;
     let file_options = FileOptions::new().with_content_type("text/plain");
 
-    println!("Attempting authenticated upload to: {}", upload_path);
+    println!("Attempting authenticated upload to: {upload_path}");
     let upload_result = storage
         .from(bucket_name)
         .upload(upload_path, temp_path, Some(file_options))
         .await;
-    println!("[INFO] Authenticated Upload Result: {:?}", upload_result);
+    println!("[INFO] Authenticated Upload Result: {upload_result:?}");
     tokio::fs::remove_file(temp_path).await?;
 
     // 2. Authenticated List
@@ -659,27 +651,21 @@ async fn test_authenticated_operations(
         .from(bucket_name)
         .list("private/", Some(list_options))
         .await;
-    println!("[INFO] Authenticated List Result: {:?}", files_result);
+    println!("[INFO] Authenticated List Result: {files_result:?}");
 
     // 3. Create Signed URL (for authenticated download)
     let expires_in = 60;
-    println!(
-        "Creating signed URL for '{}' expiring in {} seconds",
-        upload_path, expires_in
-    );
+    println!("Creating signed URL for '{upload_path}' expiring in {expires_in} seconds");
     let signed_url_result = storage
         .from(bucket_name)
         .create_signed_url(upload_path, expires_in)
         .await;
-    println!("[INFO] Create Signed URL Result: {:?}", signed_url_result);
+    println!("[INFO] Create Signed URL Result: {signed_url_result:?}");
 
     // 4. Authenticated Download
-    println!("Attempting authenticated download of: {}", upload_path);
+    println!("Attempting authenticated download of: {upload_path}");
     let download_result = storage.from(bucket_name).download(upload_path).await;
-    println!(
-        "[INFO] Authenticated Download Result: {:?}",
-        download_result
-    );
+    println!("[INFO] Authenticated Download Result: {download_result:?}");
 
     // 5. Authenticated Move (Simulated)
     let source_path = "private/move_source.txt";
@@ -687,44 +673,38 @@ async fn test_authenticated_operations(
     let temp_source_path_str = "move_source_temp.txt";
     let temp_source_path = Path::new(temp_source_path_str);
     tokio::fs::write(temp_source_path, "File to be moved.").await?;
-    println!("Uploading source file for move test: {}", source_path);
+    println!("Uploading source file for move test: {source_path}");
     storage
         .from(bucket_name)
         .upload(source_path, temp_source_path, None)
         .await?;
     tokio::fs::remove_file(temp_source_path).await?;
 
-    println!(
-        "Attempting simulated move: {} -> {}",
-        source_path, dest_path
-    );
+    println!("Attempting simulated move: {source_path} -> {dest_path}");
     let remove_result = storage.from(bucket_name).remove(vec![source_path]).await;
-    println!(
-        "[INFO] Simulated Move (Remove Source) Result: {:?}",
-        remove_result
-    );
+    println!("[INFO] Simulated Move (Remove Source) Result: {remove_result:?}");
 
     // 6. Authenticated Delete
     let delete_path = "private/to_delete.txt";
     let temp_delete_path_str = "to_delete_temp.txt";
     let temp_delete_path = Path::new(temp_delete_path_str);
     tokio::fs::write(temp_delete_path, "Delete me.").await?;
-    println!("Uploading file for delete test: {}", delete_path);
+    println!("Uploading file for delete test: {delete_path}");
     storage
         .from(bucket_name)
         .upload(delete_path, temp_delete_path, None)
         .await?;
     tokio::fs::remove_file(temp_delete_path).await?;
 
-    println!("Attempting authenticated delete of: {}", delete_path);
+    println!("Attempting authenticated delete of: {delete_path}");
     let delete_result = storage.from(bucket_name).remove(vec![delete_path]).await;
-    println!("[INFO] Authenticated Delete Result: {:?}", delete_result);
+    println!("[INFO] Authenticated Delete Result: {delete_result:?}");
 
     // Cleanup: Delete the authenticated bucket
-    println!("Cleaning up: Deleting bucket '{}'", bucket_name);
+    println!("Cleaning up: Deleting bucket '{bucket_name}'");
     match storage.delete_bucket(bucket_name).await {
-        Ok(_) => println!("Bucket '{}' deleted successfully.", bucket_name),
-        Err(e) => println!("Failed to delete bucket '{}': {}", bucket_name, e),
+        Ok(_) => println!("Bucket '{bucket_name}' deleted successfully."),
+        Err(e) => println!("Failed to delete bucket '{bucket_name}': {e}"),
     }
 
     Ok(())
@@ -738,43 +718,41 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let supabase_url = env::var("SUPABASE_URL").expect("SUPABASE_URL must be set");
     let supabase_key = env::var("SUPABASE_ANON_KEY").expect("SUPABASE_ANON_KEY must be set");
 
-    println!("Using Supabase URL: {}", supabase_url);
+    println!("Using Supabase URL: {supabase_url}");
     println!("==== Supabase Storage Examples ====");
 
     // Supabaseクライアントの初期化
-    let supabase = Supabase::new(&supabase_url, &supabase_key);
+    let config = SupabaseConfig::new(supabase_url.as_str(), supabase_key)?;
+    let supabase = SupabaseClientWrapper::new(config)?;
 
-    let storage = supabase.storage();
+    let storage = supabase.storage.clone();
 
     // 各サンプル関数を呼び出す
     match run_basic_storage_operations(&storage).await {
         Ok(_) => println!("基本的なストレージ操作の例が正常に完了しました。"),
-        Err(e) => eprintln!("基本的なストレージ操作の例でエラーが発生しました: {}", e),
+        Err(e) => eprintln!("基本的なストレージ操作の例でエラーが発生しました: {e}"),
     }
 
     match run_large_file_upload(&storage).await {
         Ok(_) => println!("大容量ファイルのアップロード例が正常に完了しました。"),
-        Err(e) => eprintln!(
-            "大容量ファイルのアップロード例でエラーが発生しました: {}",
-            e
-        ),
+        Err(e) => eprintln!("大容量ファイルのアップロード例でエラーが発生しました: {e}"),
     }
 
     // Note: These examples still create their own unauthenticated clients internally.
     // To fix their auth errors, they need refactoring similar to the above.
     match image_transform_examples::run_image_transform_examples().await {
         Ok(_) => println!("画像変換機能の例が正常に完了しました。"),
-        Err(e) => eprintln!("画像変換機能の例でエラーが発生しました: {}", e),
+        Err(e) => eprintln!("画像変換機能の例でエラーが発生しました: {e}"),
     }
 
-    match run_s3_compatible_example(&supabase).await {
+    match run_s3_compatible_example(supabase.clone()).await {
         Ok(_) => println!("S3互換APIの例が正常に完了しました。"),
-        Err(e) => eprintln!("S3互換APIの例でエラーが発生しました: {}", e),
+        Err(e) => eprintln!("S3互換APIの例でエラーが発生しました: {e}"),
     }
 
     // Ensure authenticated tests run if applicable (they might need adjustment depending on actual auth flow)
-    if let Err(e) = test_authenticated_operations(&supabase).await {
-        println!("Error in authenticated storage operations: {}", e);
+    if let Err(e) = test_authenticated_operations(supabase).await {
+        println!("Error in authenticated storage operations: {e}");
     }
 
     println!("\n全ての例が実行されました。");

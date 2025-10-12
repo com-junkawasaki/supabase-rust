@@ -6,7 +6,13 @@ description = "Examples for the supabase-rust-client crate"
 license = "MIT"
 
 [dependencies]
-supabase-rust-client = { version = "0.3.0", path = "../crates/supabase-rust-client" }
+supabase-rust-auth = { workspace = true }
+supabase-rust-client = { workspace = true }
+supabase-rust-functions = { workspace = true }
+supabase-rust-migration = { workspace = true }
+supabase-rust-postgrest = { workspace = true }
+supabase-rust-realtime = { workspace = true }
+supabase-rust-storage = { workspace = true }
 tokio = { version = "1.0", features = ["full"] }
 serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"

@@ -9,7 +9,8 @@ use supabase_rust_client::models::{AuthCredentials, Item};
 // Import dev dependencies for mocking, etc.
 use chrono::Utc;
 use dotenv::dotenv;
-use serde_json::json; // To create mock JSON bodies
+// To create mock JSON bodies
+use serde_json::json;
 use std::env;
 use uuid::Uuid;
 use wiremock::{
@@ -291,9 +292,7 @@ async fn test_integration_crud() {
         .and(header("Authorization", auth_header_value.as_str()))
         .and(header("apikey", config.anon_key.as_str()))
         .and(header("Prefer", "return=representation"))
-        .respond_with(
-            ResponseTemplate::new(201).set_body_json(vec![expected_created_item.clone()]),
-        )
+        .respond_with(ResponseTemplate::new(201).set_body_json(vec![expected_created_item.clone()]))
         .expect(1)
         .mount(&mock_server)
         .await;

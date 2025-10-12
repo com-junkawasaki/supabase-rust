@@ -3228,14 +3228,39 @@ dependencies = [
  "serde",
  "serde_json",
  "supabase-rust-auth",
+ "supabase-rust-functions",
  "supabase-rust-postgrest",
  "supabase-rust-realtime",
+ "supabase-rust-storage",
  "thiserror 1.0.69",
  "tokio",
  "tracing",
  "url",
  "uuid",
  "wiremock",
+]
+
+[[package]]
+name = "supabase-rust-examples"
+version = "0.4.0"
+dependencies = [
+ "bytes",
+ "dotenv",
+ "futures",
+ "mime",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "supabase-rust-auth",
+ "supabase-rust-client",
+ "supabase-rust-functions",
+ "supabase-rust-migration",
+ "supabase-rust-postgrest",
+ "supabase-rust-realtime",
+ "supabase-rust-storage",
+ "tempfile",
+ "tokio",
+ "uuid",
 ]
 
 [[package]]

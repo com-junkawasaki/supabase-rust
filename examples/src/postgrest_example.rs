@@ -2,8 +2,9 @@ use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::env;
-use supabase_rust_gftd::postgrest::{IsolationLevel, PostgrestError, SortOrder, TransactionMode};
-use supabase_rust_gftd::Supabase;
+use supabase_rust_client::client::SupabaseConfig;
+use supabase_rust_client::SupabaseClientWrapper;
+use supabase_rust_postgrest::{IsolationLevel, PostgrestError, SortOrder, TransactionMode};
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 struct Task {
@@ -24,10 +25,11 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let supabase_url = env::var("SUPABASE_URL").expect("SUPABASE_URL must be set");
     let supabase_key = env::var("SUPABASE_KEY").expect("SUPABASE_KEY must be set");
 
-    println!("Using Supabase URL: {}", supabase_url);
+    println!("Using Supabase URL: {supabase_url}");
 
     // Initialize the Supabase client
-    let supabase_client = Supabase::new(&supabase_url, &supabase_key);
+    let config = SupabaseConfig::new(supabase_url.as_str(), supabase_key)?;
+    let supabase_client = SupabaseClientWrapper::new(config)?;
 
     println!("Starting PostgREST advanced example");
 
@@ -36,17 +38,17 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let test_password = "password123";
 
     let sign_up_result = supabase_client
-        .auth()
+        .auth
         .sign_up(&test_email, test_password)
         .await?;
 
     let user_id = sign_up_result.user.id.clone();
     let access_token = sign_up_result.access_token.clone();
-    println!("Created test user with ID: {}", user_id);
+    println!("Created test user with ID: {user_id}");
 
     // Example 1: Basic operations
     println!("Example 1: Basic operations");
-    println!("Using user_id: {}", user_id);
+    println!("Using user_id: {user_id}");
 
     // Example 2: INSERT and SELECT
     println!("\nExample 2: INSERT and SELECT");
@@ -56,7 +58,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         // Create JSON directly, omitting id
         let task_json = json!({
             "title": format!("Task {}", i),
-            "description": Some(format!("Description for task {}", i)),
+            "description": Some(format!("Description for task {i}")),
             "is_complete": i % 2 == 0,
             "user_id": user_id, // Use the correct user_id
         });
@@ -137,7 +139,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     for i in 100..105 {
         let task_json = json!({
             "title": format!("Range Task {}", i),
-            "description": Some(format!("Description for range task {}", i)),
+            "description": Some(format!("Description for range task {i}")),
             "is_complete": false,
             "user_id": user_id,
         });
@@ -187,7 +189,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         count_result[0]["count"].as_i64().unwrap_or(0)
     };
 
-    println!("Total number of tasks for user {}: {}", user_id, count);
+    println!("Total number of tasks for user {user_id}: {count}");
 
     // Example 7: DELETE with filters
     println!("\nExample 7: DELETE with filters");
@@ -245,7 +247,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
                 "Failed to get ID from insert response".to_string(),
             )
         })?;
-    println!("Created task in transaction with ID: {}", tx_task_id);
+    println!("Created task in transaction with ID: {tx_task_id}");
     transaction.savepoint("after_insert").await?;
     println!("Created savepoint 'after_insert'");
     let tasks_in_transaction_update1 = transaction.from("tasks");
@@ -338,10 +340,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
                 "Failed to get ID from rollback insert response".to_string(),
             )
         })?;
-    println!(
-        "Created task in transaction2 (will be rolled back) with ID: {}",
-        roll_task_id
-    );
+    println!("Created task in transaction2 (will be rolled back) with ID: {roll_task_id}");
     transaction2.rollback().await?;
     println!("Transaction2 rolled back");
 
@@ -377,7 +376,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .delete()
         .await?;
 
-    println!("Cleaned up all test data for user {}", user_id);
+    println!("Cleaned up all test data for user {user_id}");
 
     println!("PostgREST example completed");
 

@@ -1,6 +1,7 @@
 use dotenv::dotenv;
 use std::env;
-use supabase_rust_gftd::Supabase;
+use supabase_rust_client::client::SupabaseConfig;
+use supabase_rust_client::SupabaseClientWrapper;
 use uuid::Uuid;
 
 #[tokio::main]
@@ -13,24 +14,25 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let supabase_key = env::var("SUPABASE_KEY").expect("SUPABASE_KEY must be set");
 
     // Initialize the Supabase client
-    let supabase = Supabase::new(&supabase_url, &supabase_key);
+    let config = SupabaseConfig::new(supabase_url.as_str(), supabase_key)?;
+    let supabase = SupabaseClientWrapper::new(config)?;
 
     println!("Starting Auth example");
 
     // Generate a unique email for testing
     let unique_id = Uuid::new_v4().to_string();
-    let test_email = format!("test-user-{}@example.com", unique_id);
+    let test_email = format!("test-user-{unique_id}@example.com");
     let test_password = "securePassword123!";
 
     // Create a new user
-    let auth = supabase.auth();
+    let auth = supabase.auth;
 
     // Sign up a new user
-    println!("Signing up a new user with email: {}", test_email);
+    println!("Signing up a new user with email: {test_email}");
 
     let user_response = auth.sign_up(&test_email, test_password).await?;
 
-    println!("User sign up response: {:?}", user_response);
+    println!("User sign up response: {user_response:?}");
 
     // サインイン機能をテスト
     println!("\nTesting sign in with the new user");
@@ -39,18 +41,18 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         .sign_in_with_password(&test_email, test_password)
         .await?;
 
-    println!("User sign in response: {:?}", sign_in_response);
+    println!("User sign in response: {sign_in_response:?}");
 
     // アクセストークンを取得
     let access_token = sign_in_response.access_token;
-    println!("\nAccess token: {}", access_token);
+    println!("\nAccess token: {access_token}");
 
     // ユーザー情報を取得 - APIの変更に対応
     println!("\nGetting user information");
 
     let user_info = auth.get_user().await?;
 
-    println!("User info: {:?}", user_info);
+    println!("User info: {user_info:?}");
 
     // メタデータ更新機能は現在のAPIでは使用できないためコメントアウト
     /*

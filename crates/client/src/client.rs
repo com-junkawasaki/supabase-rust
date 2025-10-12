@@ -13,8 +13,10 @@ use std::sync::Arc;
 use reqwest::Client as ReqwestClient;
 use supabase_rust_auth::AuthOptions;
 use supabase_rust_auth::{Auth, AuthError, Session as AuthSession};
-use supabase_rust_postgrest::PostgrestError;
+use supabase_rust_functions::FunctionsClient;
+use supabase_rust_postgrest::{PostgrestClient, PostgrestError};
 use supabase_rust_realtime::RealtimeClient;
+use supabase_rust_storage::StorageClient;
 
 use tokio::sync::{mpsc, Mutex};
 use url::Url;
@@ -67,8 +69,21 @@ pub struct SupabaseClientWrapper {
     config: Arc<SupabaseConfig>,
     http_client: ReqwestClient,
     pub auth: Arc<Auth>,
+    pub functions: Arc<FunctionsClient>,
     pub realtime: Arc<RealtimeClient>,
+    pub storage: Arc<StorageClient>,
     current_session: Arc<Mutex<Option<AuthSession>>>,
+}
+
+impl SupabaseClientWrapper {
+    pub fn from(&self, table: &str) -> PostgrestClient {
+        PostgrestClient::new(
+            self.config.url.as_str(),
+            self.config.anon_key.as_str(),
+            table,
+            self.http_client.clone(),
+        )
+    }
 }
 
 impl SupabaseClientWrapper {
@@ -85,6 +100,9 @@ impl SupabaseClientWrapper {
             AuthOptions::default(),
         );
 
+        let functions_client =
+            FunctionsClient::new(config.url.as_str(), &config.anon_key, http_client.clone());
+
         let mut rt_url_builder = config.url.clone();
         let scheme = if config.url.scheme() == "https" {
             "wss"
@@ -95,9 +113,12 @@ impl SupabaseClientWrapper {
             SupabaseError::Initialization("Failed to set scheme for Realtime URL".to_string())
         })?;
         let rt_url = rt_url_builder.join("realtime/v1").map_err(|e| {
-            SupabaseError::Initialization(format!("Failed to construct Realtime URL: {}", e))
+            SupabaseError::Initialization(format!("Failed to construct Realtime URL: {e}"))
         })?;
         let realtime_client = RealtimeClient::new(rt_url.as_ref(), &config.anon_key);
+
+        let storage_client =
+            StorageClient::new(config.url.as_str(), &config.anon_key, http_client.clone());
 
         println!("Supabase client initialized (Auth & Realtime - Postgrest on demand).");
 
@@ -105,7 +126,9 @@ impl SupabaseClientWrapper {
             config: Arc::new(config),
             http_client,
             auth: Arc::new(auth_client),
+            functions: Arc::new(functions_client),
             realtime: Arc::new(realtime_client),
+            storage: Arc::new(storage_client),
             current_session: Arc::new(Mutex::new(None)),
         })
     }
@@ -141,7 +164,7 @@ impl SupabaseClientWrapper {
             }
             Err(e) => {
                 // Authentication failed
-                eprintln!("[IMPL] Authentication failed: {:?}", e); // Use eprintln for errors
+                eprintln!("[IMPL] Authentication failed: {e:?}"); // Use eprintln for errors
                 Err(SupabaseError::Auth(e)) // Map the AuthError to SupabaseError
             }
         }
@@ -264,7 +287,8 @@ impl SupabaseClientWrapper {
 
 #[cfg(test)]
 mod tests {
-    use super::*; // Import items from parent module
+    use super::*;
+    // Import items from parent module
     use dotenv::dotenv;
 
     #[test]
@@ -286,7 +310,7 @@ mod tests {
 
         // Fix: Url::parse adds a trailing slash if missing path, format! needs literal and arg
         // Use the original URL value for comparison
-        assert_eq!(config.url.to_string(), format!("{}/", url));
+        assert_eq!(config.url.to_string(), format!("{url}/"));
         assert_eq!(config.anon_key, key);
 
         // Optional: Unset the vars? Generally not needed as it affects only this process.

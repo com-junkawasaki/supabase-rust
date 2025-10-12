@@ -202,23 +202,23 @@ impl ImageTransformOptions {
         let mut params = Vec::new();
 
         if let Some(width) = self.width {
-            params.push(format!("width={}", width));
+            params.push(format!("width={width}"));
         }
 
         if let Some(height) = self.height {
-            params.push(format!("height={}", height));
+            params.push(format!("height={height}"));
         }
 
         if let Some(resize) = &self.resize {
-            params.push(format!("resize={}", resize));
+            params.push(format!("resize={resize}"));
         }
 
         if let Some(format) = &self.format {
-            params.push(format!("format={}", format));
+            params.push(format!("format={format}"));
         }
 
         if let Some(quality) = self.quality {
-            params.push(format!("quality={}", quality));
+            params.push(format!("quality={quality}"));
         }
 
         params.join("&")
@@ -686,7 +686,7 @@ impl<'a> StorageBucketClient<'a> {
             .get("etag")
             .ok_or_else(|| StorageError::new("ETag header not found in response".to_string()))?
             .to_str()
-            .map_err(|e| StorageError::new(format!("Invalid ETag header: {}", e)))?
+            .map_err(|e| StorageError::new(format!("Invalid ETag header: {e}")))?
             .to_string();
 
         let part_info = UploadedPartInfo { part_number, etag };
@@ -837,7 +837,7 @@ impl<'a> StorageBucketClient<'a> {
         let request_url = if query_params.is_empty() {
             url
         } else {
-            format!("{}?{}", url, query_params)
+            format!("{url}?{query_params}")
         };
 
         let res = self
@@ -859,8 +859,7 @@ impl<'a> StorageBucketClient<'a> {
                 .await
                 .unwrap_or_else(|_| "Unknown error".to_string());
             return Err(StorageError::ApiError(format!(
-                "Failed to transform image: {} (Status: {})",
-                error_text, status
+                "Failed to transform image: {error_text} (Status: {status})",
             )));
         }
 
@@ -880,7 +879,7 @@ impl<'a> StorageBucketClient<'a> {
         if query_params.is_empty() {
             base_url
         } else {
-            format!("{}?{}", base_url, query_params)
+            format!("{base_url}?{query_params}")
         }
     }
 
@@ -924,8 +923,7 @@ impl<'a> StorageBucketClient<'a> {
                 .await
                 .unwrap_or_else(|_| "Unknown error".to_string());
             return Err(StorageError::ApiError(format!(
-                "Failed to create signed transform URL: {} (Status: {})",
-                error_text, status
+                "Failed to create signed transform URL: {error_text} (Status: {status})",
             )));
         }
 
@@ -1005,8 +1003,7 @@ impl<'a> StorageBucketClient<'a> {
                     error_text
                 };
             Err(StorageError::ApiError(format!(
-                "Failed to move object: {} (Status: {})",
-                error_message, status
+                "Failed to move object: {error_message} (Status: {status})",
             )))
         }
     }
@@ -1222,7 +1219,7 @@ pub mod s3 {
             // メタデータがある場合は追加
             if let Some(metadata) = metadata {
                 for (key, value) in metadata {
-                    request = request.header(&format!("x-amz-meta-{}", key), value);
+                    request = request.header(&format!("x-amz-meta-{key}"), value);
                 }
             }
 
@@ -1357,15 +1354,15 @@ pub mod s3 {
             let mut query_params = Vec::new();
 
             if let Some(prefix) = prefix {
-                query_params.push(format!("prefix={}", prefix));
+                query_params.push(format!("prefix={prefix}"));
             }
 
             if let Some(delimiter) = delimiter {
-                query_params.push(format!("delimiter={}", delimiter));
+                query_params.push(format!("delimiter={delimiter}"));
             }
 
             if let Some(max_keys) = max_keys {
-                query_params.push(format!("max-keys={}", max_keys));
+                query_params.push(format!("max-keys={max_keys}"));
             }
 
             if !query_params.is_empty() {
@@ -1497,7 +1494,7 @@ mod tests {
         if let Err(StorageError::ApiError(msg)) = result {
             assert!(msg.contains("Unauthorized"));
         } else {
-            panic!("Expected ApiError, got {:?}", result);
+            panic!("Expected ApiError, got {result:?}");
         }
     }
 
@@ -1556,7 +1553,7 @@ mod tests {
         if let Err(StorageError::ApiError(msg)) = result {
             assert!(msg.contains("Bucket already exists"));
         } else {
-            panic!("Expected ApiError, got {:?}", result);
+            panic!("Expected ApiError, got {result:?}");
         }
     }
 
@@ -1568,7 +1565,7 @@ mod tests {
 
         // --- 成功ケースのモック ---
         Mock::given(method("DELETE"))
-            .and(path(format!("/storage/v1/bucket/{}", bucket_id)))
+            .and(path(format!("/storage/v1/bucket/{bucket_id}")))
             .respond_with(
                 ResponseTemplate::new(200)
                     .set_body_json(json!({ "message": "Successfully deleted" })),
@@ -1591,7 +1588,7 @@ mod tests {
         // --- エラーケースのモック (例: 404 Not Found) ---
         let error_response = json!({ "message": "Bucket not found" });
         Mock::given(method("DELETE"))
-            .and(path(format!("/storage/v1/bucket/{}", bucket_id)))
+            .and(path(format!("/storage/v1/bucket/{bucket_id}")))
             .respond_with(ResponseTemplate::new(404).set_body_json(error_response))
             .mount(&mock_server)
             .await;
@@ -1602,7 +1599,7 @@ mod tests {
         if let Err(StorageError::ApiError(msg)) = result {
             assert!(msg.contains("Bucket not found"));
         } else {
-            panic!("Expected ApiError, got {:?}", result);
+            panic!("Expected ApiError, got {result:?}");
         }
     }
 
@@ -1625,7 +1622,7 @@ mod tests {
         });
 
         Mock::given(method("PUT"))
-            .and(path(format!("/storage/v1/bucket/{}", bucket_id)))
+            .and(path(format!("/storage/v1/bucket/{bucket_id}")))
             .and(wiremock::matchers::body_json(request_body.clone()))
             .respond_with(ResponseTemplate::new(200).set_body_json(response_body.clone()))
             .mount(&mock_server)
@@ -1651,7 +1648,7 @@ mod tests {
         // --- エラーケースのモック (例: 404 Not Found) ---
         let error_response = json!({ "message": "Bucket not found for update" });
         Mock::given(method("PUT"))
-            .and(path(format!("/storage/v1/bucket/{}", bucket_id)))
+            .and(path(format!("/storage/v1/bucket/{bucket_id}")))
             .and(wiremock::matchers::body_json(request_body.clone())) // ボディも検証
             .respond_with(ResponseTemplate::new(404).set_body_json(error_response))
             .mount(&mock_server)
@@ -1665,7 +1662,7 @@ mod tests {
         if let Err(StorageError::ApiError(msg)) = result {
             assert!(msg.contains("Bucket not found for update"));
         } else {
-            panic!("Expected ApiError, got {:?}", result);
+            panic!("Expected ApiError, got {result:?}");
         }
     }
 
@@ -1699,8 +1696,7 @@ mod tests {
         // path と method のみでマッチング（必要ならヘッダーも）
         Mock::given(method("POST"))
             .and(path(format!(
-                "/storage/v1/object/{}/{}",
-                bucket_id, object_path
+                "/storage/v1/object/{bucket_id}/{object_path}"
             )))
             .respond_with(ResponseTemplate::new(200).set_body_json(response_body.clone()))
             .mount(&mock_server)
@@ -1726,8 +1722,7 @@ mod tests {
         let error_response = json!({ "message": "Invalid upload parameters" });
         Mock::given(method("POST"))
             .and(path(format!(
-                "/storage/v1/object/{}/{}",
-                bucket_id, object_path
+                "/storage/v1/object/{bucket_id}/{object_path}",
             )))
             .respond_with(ResponseTemplate::new(400).set_body_json(error_response))
             .mount(&mock_server)
@@ -1739,7 +1734,7 @@ mod tests {
         if let Err(StorageError::ApiError(msg)) = result {
             assert!(msg.contains("Invalid upload parameters"));
         } else {
-            panic!("Expected ApiError, got {:?}", result);
+            panic!("Expected ApiError, got {result:?}");
         }
 
         // 一時ファイルをクリーンアップ (temp_dir がスコープを抜けるときに自動で行われる)
@@ -1756,8 +1751,7 @@ mod tests {
         // --- 成功ケースのモック ---
         Mock::given(method("GET"))
             .and(path(format!(
-                "/storage/v1/object/{}/{}",
-                bucket_id, object_path
+                "/storage/v1/object/{bucket_id}/{object_path}",
             )))
             .respond_with(ResponseTemplate::new(200).set_body_bytes(file_content.clone()))
             .mount(&mock_server)
@@ -1782,8 +1776,7 @@ mod tests {
         let error_response = json!({ "message": "File not found" });
         Mock::given(method("GET"))
             .and(path(format!(
-                "/storage/v1/object/{}/{}",
-                bucket_id, object_path
+                "/storage/v1/object/{bucket_id}/{object_path}",
             )))
             .respond_with(ResponseTemplate::new(404).set_body_json(error_response))
             .mount(&mock_server)
@@ -1795,7 +1788,7 @@ mod tests {
         if let Err(StorageError::ApiError(msg)) = result {
             assert!(msg.contains("File not found"));
         } else {
-            panic!("Expected ApiError, got {:?}", result);
+            panic!("Expected ApiError, got {result:?}");
         }
     }
 
@@ -1840,7 +1833,7 @@ mod tests {
 
         // Fix: Expect GET request with query parameters
         Mock::given(method("GET")) // Changed from POST to GET
-            .and(path(format!("/storage/v1/object/list/{}", bucket_id)))
+            .and(path(format!("/storage/v1/object/list/{bucket_id}")))
             // Add query parameter matchers
             .and(wiremock::matchers::query_param("prefix", prefix))
             .and(wiremock::matchers::query_param("limit", "10"))
@@ -1875,7 +1868,7 @@ mod tests {
         let error_response = json!({ "message": "Invalid list parameters" });
         // Fix: Expect GET request for error case as well
         Mock::given(method("GET")) // Changed from POST to GET
-            .and(path(format!("/storage/v1/object/list/{}", bucket_id)))
+            .and(path(format!("/storage/v1/object/list/{bucket_id}")))
             // Add query param matchers for the specific error case call
             .and(wiremock::matchers::query_param("prefix", prefix)) // Assuming same prefix
             // No other options are sent in the error test call: bucket_client.list(prefix, Some(ListOptions::new()))
@@ -1889,7 +1882,7 @@ mod tests {
         if let Err(StorageError::ApiError(msg)) = result {
             assert!(msg.contains("Invalid list parameters"));
         } else {
-            panic!("Expected ApiError, got {:?}", result);
+            panic!("Expected ApiError, got {result:?}");
         }
     }
 
@@ -1905,7 +1898,7 @@ mod tests {
         let response_body = json!([]); // 成功時は空の配列か特定のメッセージを返す場合がある
 
         Mock::given(method("DELETE"))
-            .and(path(format!("/storage/v1/object/{}", bucket_id)))
+            .and(path(format!("/storage/v1/object/{bucket_id}")))
             .and(wiremock::matchers::body_json(request_body.clone()))
             .respond_with(ResponseTemplate::new(200).set_body_json(response_body.clone()))
             .mount(&mock_server)
@@ -1927,7 +1920,7 @@ mod tests {
         // --- エラーケースのモック (例: 400 Bad Request) ---
         let error_response = json!({ "message": "Invalid paths provided" });
         Mock::given(method("DELETE"))
-            .and(path(format!("/storage/v1/object/{}", bucket_id)))
+            .and(path(format!("/storage/v1/object/{bucket_id}")))
             .and(wiremock::matchers::body_json(request_body.clone())) // 同じボディを期待
             .respond_with(ResponseTemplate::new(400).set_body_json(error_response))
             .mount(&mock_server)
@@ -1940,7 +1933,7 @@ mod tests {
         if let Err(StorageError::ApiError(msg)) = result {
             assert!(msg.contains("Invalid paths provided"));
         } else {
-            panic!("Expected ApiError, got {:?}", result);
+            panic!("Expected ApiError, got {result:?}");
         }
     }
 
@@ -1964,8 +1957,7 @@ mod tests {
 
         Mock::given(method("POST"))
             .and(path(format!(
-                "/storage/v1/object/sign/{}/{}",
-                bucket_id, object_path
+                "/storage/v1/object/sign/{bucket_id}/{object_path}"
             )))
             .and(wiremock::matchers::body_json(request_body.clone()))
             .respond_with(ResponseTemplate::new(200).set_body_json(response_body.clone()))
@@ -1990,8 +1982,7 @@ mod tests {
         let signed_url = result.unwrap();
         // モックのレスポンスに含まれる URL と一致するか検証 (実際の token は異なる)
         assert!(signed_url.contains(&format!(
-            "/storage/v1/object/sign/{}/{}",
-            bucket_id, object_path
+            "/storage/v1/object/sign/{bucket_id}/{object_path}"
         )));
 
         // モックをリセット
@@ -2001,8 +1992,7 @@ mod tests {
         let error_response = json!({ "message": "Object not found" });
         Mock::given(method("POST"))
             .and(path(format!(
-                "/storage/v1/object/sign/{}/{}",
-                bucket_id, object_path
+                "/storage/v1/object/sign/{bucket_id}/{object_path}"
             )))
             .and(wiremock::matchers::body_json(request_body.clone()))
             .respond_with(ResponseTemplate::new(404).set_body_json(error_response))
@@ -2017,7 +2007,7 @@ mod tests {
         if let Err(StorageError::ApiError(msg)) = result {
             assert!(msg.contains("Object not found"));
         } else {
-            panic!("Expected ApiError, got {:?}", result);
+            panic!("Expected ApiError, got {result:?}");
         }
     }
 
@@ -2178,8 +2168,7 @@ mod tests {
         // --- 成功ケースのモック ---
         Mock::given(method("GET"))
             .and(path(format!(
-                "/object/transform/authenticated/{}/{}",
-                bucket_id, object_path
+                "/object/transform/authenticated/{bucket_id}/{object_path}"
             )))
             .and(wiremock::matchers::query_param("width", "100"))
             .and(wiremock::matchers::query_param("height", "100"))
@@ -2204,8 +2193,7 @@ mod tests {
         let error_response = json!({ "statusCode": "400", "error": "BadRequest", "message": "Invalid transform options" });
         Mock::given(method("GET"))
             .and(path(format!(
-                "/object/transform/authenticated/{}/{}",
-                bucket_id, object_path
+                "/object/transform/authenticated/{bucket_id}/{object_path}"
             )))
             // クエリパラメータの検証は省略（パスのみで判断）
             .respond_with(ResponseTemplate::new(400).set_body_json(error_response))
@@ -2220,7 +2208,7 @@ mod tests {
         if let Err(StorageError::ApiError(msg)) = result {
             assert!(msg.contains("Invalid transform options") || msg.contains("BadRequest"));
         } else {
-            panic!("Expected ApiError, got {:?}", result);
+            panic!("Expected ApiError, got {result:?}");
         }
     }
 
@@ -2261,8 +2249,7 @@ mod tests {
 
         Mock::given(method("POST"))
             .and(path(format!(
-                "/object/sign/{}/{}", // Removed /storage/v1 prefix
-                bucket_id, object_path
+                "/object/sign/{bucket_id}/{object_path}" // Removed /storage/v1 prefix
             )))
             .and(wiremock::matchers::body_json(expected_request_body.clone()))
             .respond_with(ResponseTemplate::new(200).set_body_json(response_body))
@@ -2281,8 +2268,7 @@ mod tests {
         let signed_url = result.unwrap();
         // 返されたURLが期待通りか検証
         assert!(signed_url.contains(&format!(
-            "/storage/v1/object/sign/{}/{}",
-            bucket_id, object_path
+            "/storage/v1/object/sign/{bucket_id}/{object_path}"
         )));
         assert!(signed_url.contains("token=test-token")); // モックに基づいたトークン
         assert!(signed_url.contains(&expected_transform_string));
@@ -2299,8 +2285,7 @@ mod tests {
 
         Mock::given(method("POST"))
             .and(path(format!(
-                "/object/sign/{}/{}", // Removed /storage/v1 prefix
-                bucket_id, object_path
+                "/object/sign/{bucket_id}/{object_path}" // Removed /storage/v1 prefix
             )))
             .and(wiremock::matchers::body_json(
                 expected_request_body_err.clone(),
@@ -2320,7 +2305,7 @@ mod tests {
                 msg.contains("Invalid transform parameters") || msg.contains("BadRequest") // statusCode や error フィールドを含むか確認
             );
         } else {
-            panic!("Expected ApiError, got {:?}", result);
+            panic!("Expected ApiError, got {result:?}");
         }
     }
 }

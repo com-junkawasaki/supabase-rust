@@ -54,6 +54,6 @@ impl std::fmt::Display for FilterOperator {
             // FilterOperator::Like => "like",
             // FilterOperator::ILike => "ilike",
         };
-        write!(f, "{}", s)
+        write!(f, "{s}")
     }
 }

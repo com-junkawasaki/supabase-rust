@@ -2,7 +2,7 @@ use dotenv::dotenv;
 use reqwest::Client;
 use serde_json::json;
 use std::env;
-use supabase_rust_gftd::auth::AdminAuth;
+use supabase_rust_auth::AdminAuth;
 // use supabase_rust_gftd::Supabase; // Unused import
 
 #[tokio::main]
@@ -21,7 +21,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // AdminAuthクライアントを直接初期化
     let admin = AdminAuth::new(
-        &format!("{}/auth/v1", supabase_url),
+        &format!("{supabase_url}/auth/v1"),
         &service_role_key,
         http_client,
     );
@@ -38,7 +38,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             }
         }
         Err(e) => {
-            println!("ユーザー一覧の取得に失敗: {:?}", e);
+            println!("ユーザー一覧の取得に失敗: {e:?}");
         }
     }
 
@@ -80,7 +80,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
                     println!("  メタデータ: {:?}", user.user_metadata);
                 }
                 Err(e) => {
-                    println!("ユーザーの取得に失敗: {:?}", e);
+                    println!("ユーザーの取得に失敗: {e:?}");
                 }
             }
 
@@ -102,7 +102,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
                     println!("  メタデータ: {:?}", updated_user.user_metadata);
                 }
                 Err(e) => {
-                    println!("ユーザーの更新に失敗: {:?}", e);
+                    println!("ユーザーの更新に失敗: {e:?}");
                 }
             }
 
@@ -118,10 +118,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             {
                 Ok(link) => {
                     println!("マジックリンク生成成功:");
-                    println!("  リンク: {}", link);
+                    println!("  リンク: {link}");
                 }
                 Err(e) => {
-                    println!("マジックリンクの生成に失敗: {:?}", e);
+                    println!("マジックリンクの生成に失敗: {e:?}");
                 }
             }
 
@@ -129,15 +129,15 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             println!("\n6. ユーザーを削除");
             match admin.delete_user(&created_user_id).await {
                 Ok(_) => {
-                    println!("ユーザー削除成功: ID {}", created_user_id);
+                    println!("ユーザー削除成功: ID {created_user_id}");
                 }
                 Err(e) => {
-                    println!("ユーザーの削除に失敗: {:?}", e);
+                    println!("ユーザーの削除に失敗: {e:?}");
                 }
             }
         }
         Err(e) => {
-            println!("ユーザーの作成に失敗: {:?}", e);
+            println!("ユーザーの作成に失敗: {e:?}");
         }
     }
 
@@ -161,12 +161,12 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
                     println!("  ユーザー削除成功: ID {}", user.id);
                 }
                 Err(e) => {
-                    println!("  ユーザーの削除に失敗: {:?}", e);
+                    println!("  ユーザーの削除に失敗: {e:?}");
                 }
             }
         }
         Err(e) => {
-            println!("招待の送信に失敗: {:?}", e);
+            println!("招待の送信に失敗: {e:?}");
         }
     }
 

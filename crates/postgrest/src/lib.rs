@@ -39,16 +39,16 @@ impl fmt::Display for PostgrestApiErrorDetails {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         let mut parts = Vec::new();
         if let Some(code) = &self.code {
-            parts.push(format!("Code: {}", code));
+            parts.push(format!("Code: {code}"));
         }
         if let Some(message) = &self.message {
-            parts.push(format!("Message: {}", message));
+            parts.push(format!("Message: {message}"));
         }
         if let Some(details) = &self.details {
-            parts.push(format!("Details: {}", details));
+            parts.push(format!("Details: {details}"));
         }
         if let Some(hint) = &self.hint {
-            parts.push(format!("Hint: {}", hint));
+            parts.push(format!("Hint: {hint}"));
         }
         write!(f, "{}", parts.join(", "))
     }
@@ -204,12 +204,12 @@ impl PostgrestClient {
     /// ヘッダーを追加
     pub fn with_header(mut self, key: &str, value: &str) -> Result<Self, PostgrestError> {
         let header_value = HeaderValue::from_str(value).map_err(|_| {
-            PostgrestError::InvalidParameters(format!("Invalid header value: {}", value))
+            PostgrestError::InvalidParameters(format!("Invalid header value: {value}"))
         })?;
 
         // ヘッダー名を文字列として所有し、HeaderNameに変換する
         let header_name = HeaderName::from_bytes(key.as_bytes()).map_err(|_| {
-            PostgrestError::InvalidParameters(format!("Invalid header name: {}", key))
+            PostgrestError::InvalidParameters(format!("Invalid header name: {key}"))
         })?;
 
         self.headers.insert(header_name, header_value);
@@ -218,7 +218,7 @@ impl PostgrestClient {
 
     /// 認証トークンを設定
     pub fn with_auth(self, token: &str) -> Result<Self, PostgrestError> {
-        self.with_header("Authorization", &format!("Bearer {}", token))
+        self.with_header("Authorization", &format!("Bearer {token}"))
     }
 
     /// 取得するカラムを指定
@@ -237,12 +237,9 @@ impl PostgrestClient {
             .cloned()
             .unwrap_or_else(|| "*".to_string());
         let new_select = if current_select == "*" {
-            format!("*,{}!inner({})", foreign_table, foreign_column)
+            format!("*,{foreign_table}!inner({foreign_column})")
         } else {
-            format!(
-                "{},{},{}!inner({})",
-                current_select, column, foreign_table, foreign_column
-            )
+            format!("{current_select},{column},{foreign_table}!inner({foreign_column})",)
         };
 
         self.query_params.insert("select".to_string(), new_select);
@@ -258,12 +255,9 @@ impl PostgrestClient {
             .cloned()
             .unwrap_or_else(|| "*".to_string());
         let new_select = if current_select == "*" {
-            format!("*,{}!left({})", foreign_table, foreign_column)
+            format!("*,{foreign_table}!left({foreign_column})")
         } else {
-            format!(
-                "{},{},{}!left({})",
-                current_select, column, foreign_table, foreign_column
-            )
+            format!("{current_select},{column},{foreign_table}!left({foreign_column})",)
         };
 
         self.query_params.insert("select".to_string(), new_select);
@@ -285,9 +279,9 @@ impl PostgrestClient {
             .unwrap_or_else(|| "*".to_string());
         let columns_str = columns.unwrap_or("*");
         let new_select = if current_select == "*" {
-            format!("*,{}({})", foreign_table, columns_str)
+            format!("*,{foreign_table}({columns_str})")
         } else {
-            format!("{},{}({})", current_select, foreign_table, columns_str)
+            format!("{current_select},{foreign_table}({columns_str})")
         };
 
         self.query_params.insert("select".to_string(), new_select);
@@ -303,12 +297,9 @@ impl PostgrestClient {
             .cloned()
             .unwrap_or_else(|| "*".to_string());
         let new_select = if current_select == "*" {
-            format!("*,{}!fk({})", foreign_table, foreign_column)
+            format!("*,{foreign_table}!fk({foreign_column})")
         } else {
-            format!(
-                "{},{}!fk({})",
-                current_select, foreign_table, foreign_column
-            )
+            format!("{current_select},{foreign_table}!fk({foreign_column})",)
         };
 
         self.query_params.insert("select".to_string(), new_select);
@@ -318,49 +309,49 @@ impl PostgrestClient {
     /// 等価フィルター
     pub fn eq(mut self, column: &str, value: &str) -> Self {
         self.query_params
-            .insert(column.to_string(), format!("eq.{}", value));
+            .insert(column.to_string(), format!("eq.{value}"));
         self
     }
 
     /// より大きいフィルター
     pub fn gt(mut self, column: &str, value: &str) -> Self {
         self.query_params
-            .insert(column.to_string(), format!("gt.{}", value));
+            .insert(column.to_string(), format!("gt.{value}"));
         self
     }
 
     /// 以上フィルター
     pub fn gte(mut self, column: &str, value: &str) -> Self {
         self.query_params
-            .insert(column.to_string(), format!("gte.{}", value));
+            .insert(column.to_string(), format!("gte.{value}"));
         self
     }
 
     /// より小さいフィルター
     pub fn lt(mut self, column: &str, value: &str) -> Self {
         self.query_params
-            .insert(column.to_string(), format!("lt.{}", value));
+            .insert(column.to_string(), format!("lt.{value}"));
         self
     }
 
     /// 以下フィルター
     pub fn lte(mut self, column: &str, value: &str) -> Self {
         self.query_params
-            .insert(column.to_string(), format!("lte.{}", value));
+            .insert(column.to_string(), format!("lte.{value}"));
         self
     }
 
     /// LIKE フィルター
     pub fn like(mut self, column: &str, pattern: &str) -> Self {
         self.query_params
-            .insert(column.to_string(), format!("like.{}", pattern));
+            .insert(column.to_string(), format!("like.{pattern}"));
         self
     }
 
     /// ILIKE フィルター（大文字小文字を区別しない）
     pub fn ilike(mut self, column: &str, pattern: &str) -> Self {
         self.query_params
-            .insert(column.to_string(), format!("ilike.{}", pattern));
+            .insert(column.to_string(), format!("ilike.{pattern}"));
         self
     }
 
@@ -368,14 +359,14 @@ impl PostgrestClient {
     pub fn in_list(mut self, column: &str, values: &[&str]) -> Self {
         let value_list = values.join(",");
         self.query_params
-            .insert(column.to_string(), format!("in.({})", value_list));
+            .insert(column.to_string(), format!("in.({value_list})"));
         self
     }
 
     /// NOT フィルター
     pub fn not(mut self, column: &str, operator_with_value: &str) -> Self {
         self.query_params
-            .insert(column.to_string(), format!("not.{}", operator_with_value));
+            .insert(column.to_string(), format!("not.{operator_with_value}"));
         self
     }
 
@@ -384,7 +375,7 @@ impl PostgrestClient {
     pub fn contains(mut self, column: &str, value: &Value) -> Result<Self, PostgrestError> {
         let value_str = serde_json::to_string(value)?;
         self.query_params
-            .insert(column.to_string(), format!("cs.{}", value_str));
+            .insert(column.to_string(), format!("cs.{value_str}"));
         Ok(self)
     }
 
@@ -393,7 +384,7 @@ impl PostgrestClient {
     pub fn contained_by(mut self, column: &str, value: &Value) -> Result<Self, PostgrestError> {
         let value_str = serde_json::to_string(value)?;
         self.query_params
-            .insert(column.to_string(), format!("cd.{}", value_str));
+            .insert(column.to_string(), format!("cd.{value_str}"));
         Ok(self)
     }
 
@@ -404,7 +395,7 @@ impl PostgrestClient {
             SortOrder::Descending => "desc",
         };
         self.query_params
-            .insert("order".to_string(), format!("{}.{}", column, order_str));
+            .insert("order".to_string(), format!("{column}.{order_str}"));
         self
     }
 
@@ -425,8 +416,8 @@ impl PostgrestClient {
     /// 全文検索
     pub fn text_search(mut self, column: &str, query: &str, config: Option<&str>) -> Self {
         let search_param = match config {
-            Some(cfg) => format!("fts({}).{}", cfg, query),
-            None => format!("fts.{}", query),
+            Some(cfg) => format!("fts({cfg}).{query}"),
+            None => format!("fts.{query}"),
         };
 
         self.query_params.insert(column.to_string(), search_param);
@@ -444,7 +435,7 @@ impl PostgrestClient {
     ) -> Self {
         self.query_params.insert(
             column.to_string(),
-            format!("st_dwithin.POINT({} {}).{}.{}", lng, lat, distance, unit),
+            format!("st_dwithin.POINT({lng} {lat}).{distance}.{unit}"),
         );
         self
     }
@@ -581,7 +572,7 @@ impl PostgrestClient {
         if status.is_success() {
             // Read the body as text first to handle potential empty responses
             let body_text = response.text().await.map_err(|e| {
-                PostgrestError::DeserializationError(format!("Failed to read response body: {}", e))
+                PostgrestError::DeserializationError(format!("Failed to read response body: {e}"))
             })?;
 
             // If body is empty but status was success (e.g., 201), return Null.
@@ -639,7 +630,7 @@ impl PostgrestClient {
         if status.is_success() {
             // Read the body as text first
             let body_text = response.text().await.map_err(|e| {
-                PostgrestError::DeserializationError(format!("Failed to read response body: {}", e))
+                PostgrestError::DeserializationError(format!("Failed to read response body: {e}"))
             })?;
 
             // If body is empty, return Null. Update might return 204 No Content.
@@ -694,7 +685,7 @@ impl PostgrestClient {
         if status.is_success() {
             // Read the body as text first
             let body_text = response.text().await.map_err(|e| {
-                PostgrestError::DeserializationError(format!("Failed to read response body: {}", e))
+                PostgrestError::DeserializationError(format!("Failed to read response body: {e}"))
             })?;
 
             // If body is empty, return Null. Delete often returns 204 No Content.
@@ -765,10 +756,7 @@ impl PostgrestClient {
         }
 
         response.json::<T>().await.map_err(|e| {
-            PostgrestError::DeserializationError(format!(
-                "Failed to deserialize RPC response: {}",
-                e
-            ))
+            PostgrestError::DeserializationError(format!("Failed to deserialize RPC response: {e}"))
         })
     }
 
@@ -825,8 +813,7 @@ impl PostgrestClient {
 
             // Transaction begin might not return standard PostgREST JSON error, treat as TransactionError
             return Err(PostgrestError::TransactionError(format!(
-                "Failed to begin transaction: {} (Status: {})",
-                error_text, status
+                "Failed to begin transaction: {error_text} (Status: {status})",
             )));
         }
 
@@ -949,8 +936,7 @@ impl PostgrestTransaction {
 
             // Treat transaction commit/rollback errors specifically
             return Err(PostgrestError::TransactionError(format!(
-                "Failed to commit transaction: {} (Status: {})",
-                error_text, status
+                "Failed to commit transaction: {error_text} (Status: {status})"
             )));
         }
 
@@ -992,8 +978,7 @@ impl PostgrestTransaction {
                 .await
                 .unwrap_or_else(|_| "Failed to read error response".to_string());
             return Err(PostgrestError::TransactionError(format!(
-                "Failed to rollback transaction: {} (Status: {})",
-                error_text, status
+                "Failed to rollback transaction: {error_text} (Status: {status})"
             )));
         }
 
@@ -1036,8 +1021,7 @@ impl PostgrestTransaction {
                 .await
                 .unwrap_or_else(|_| "Failed to read error response".to_string());
             return Err(PostgrestError::TransactionError(format!(
-                "Failed to create savepoint '{}': {} (Status: {})",
-                name, error_text, status
+                "Failed to create savepoint '{name}': {error_text} (Status: {status})"
             )));
         }
         Ok(())
@@ -1076,8 +1060,7 @@ impl PostgrestTransaction {
                 .await
                 .unwrap_or_else(|_| "Failed to read error response".to_string());
             return Err(PostgrestError::TransactionError(format!(
-                "Failed to rollback to savepoint '{}': {} (Status: {})",
-                name, error_text, status
+                "Failed to rollback to savepoint '{name}': {error_text} (Status: {status})",
             )));
         }
         Ok(())
@@ -1141,7 +1124,7 @@ mod tests {
         let result = client.select("*").execute::<serde_json::Value>().await;
 
         if let Err(e) = &result {
-            println!("Select query failed: {:?}", e);
+            println!("Select query failed: {e:?}");
         }
 
         assert!(result.is_ok());
@@ -1199,7 +1182,7 @@ mod tests {
         let result = client.call_rpc::<RpcResponse>().await; // 新しいメソッドを使用
 
         if let Err(e) = &result {
-            println!("RPC call failed: {:?}", e);
+            println!("RPC call failed: {e:?}");
         }
 
         assert!(result.is_ok());
@@ -1253,7 +1236,7 @@ mod tests {
             .await;
 
         if let Err(e) = &result {
-            println!("Join query failed: {:?}", e);
+            println!("Join query failed: {e:?}");
         }
 
         assert!(result.is_ok());
@@ -1415,7 +1398,7 @@ mod tests {
             .await;
 
         if let Err(e) = &transaction {
-            println!("Transaction failed: {:?}", e);
+            println!("Transaction failed: {e:?}");
         }
 
         assert!(transaction.is_ok());
@@ -1585,7 +1568,7 @@ mod tests {
         // contains のモック
         Mock::given(method("GET"))
             .and(path("/rest/v1/data"))
-            .and(query_param("metadata", format!("cs.{}", contains_value)))
+            .and(query_param("metadata", format!("cs.{contains_value}")))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!([{"id": 1}])))
             .mount(&mock_server)
             .await;
@@ -1593,7 +1576,7 @@ mod tests {
         // contained_by のモック
         Mock::given(method("GET"))
             .and(path("/rest/v1/data"))
-            .and(query_param("tags", format!("cd.{}", contained_by_value)))
+            .and(query_param("tags", format!("cd.{contained_by_value}")))
             .respond_with(ResponseTemplate::new(200).set_body_json(json!([{"id": 2}])))
             .mount(&mock_server)
             .await;
@@ -1665,7 +1648,7 @@ mod tests {
             .await;
 
         if let Err(e) = &result {
-            println!("Join query failed: {:?}", e);
+            println!("Join query failed: {e:?}");
         }
 
         assert!(result.is_ok(), "Request failed: {:?}", result.err());
@@ -1718,7 +1701,7 @@ mod tests {
         let result = client.insert(&insert_data).await;
 
         if let Err(e) = &result {
-            println!("Insert query failed: {:?}", e);
+            println!("Insert query failed: {e:?}");
         }
 
         assert!(result.is_ok());
@@ -1760,7 +1743,7 @@ mod tests {
         let result = client.eq("id", "1").update(&update_data).await;
 
         if let Err(e) = &result {
-            println!("Update query failed: {:?}", e);
+            println!("Update query failed: {e:?}");
         }
 
         assert!(result.is_ok());
@@ -1800,7 +1783,7 @@ mod tests {
         let result = client.eq("id", "1").delete().await;
 
         if let Err(e) = &result {
-            println!("Delete query failed: {:?}", e);
+            println!("Delete query failed: {e:?}");
         }
 
         assert!(result.is_ok());
@@ -2185,7 +2168,7 @@ mod tests {
                 assert_eq!(status, reqwest::StatusCode::UNAUTHORIZED);
                 assert!(message.contains("Invalid API key"));
             }
-            e => panic!("Expected ApiError or UnparsedApiError for 401, got {:?}", e),
+            e => panic!("Expected ApiError or UnparsedApiError for 401, got {e:?}"),
         }
 
         // Test 400 Bad Request on insert
@@ -2202,7 +2185,7 @@ mod tests {
                     .unwrap()
                     .contains("violates not-null constraint"));
             }
-            e => panic!("Expected ApiError for 400, got {:?}", e),
+            e => panic!("Expected ApiError for 400, got {e:?}"),
         }
 
         // Test 500 Internal Server Error on select
@@ -2215,7 +2198,7 @@ mod tests {
                 assert_eq!(status, reqwest::StatusCode::INTERNAL_SERVER_ERROR);
                 assert_eq!(message, "Internal Server Error");
             }
-            e => panic!("Expected UnparsedApiError for 500, got {:?}", e),
+            e => panic!("Expected UnparsedApiError for 500, got {e:?}"),
         }
     }
 }

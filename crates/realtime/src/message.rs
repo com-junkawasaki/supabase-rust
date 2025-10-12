@@ -43,7 +43,7 @@ impl std::fmt::Display for ChannelEvent {
         write!(
             f,
             "{}",
-            serde_json::to_string(self).unwrap_or_else(|_| format!("{:?}", self))
+            serde_json::to_string(self).unwrap_or_else(|_| format!("{self:?}"))
         )
         // Simple match for basic cases (less reliable than serde)
         // match self {

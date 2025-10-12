@@ -248,7 +248,7 @@ impl FunctionsClient {
             if let Ok(error_details) = serde_json::from_str::<FunctionErrorDetails>(&error_body) {
                 return Err(FunctionsError::FunctionError {
                     message: error_details.message.as_ref().map_or_else(
-                        || format!("Function returned error status: {}", status_copy),
+                        || format!("Function returned error status: {status_copy}"),
                         |msg| msg.clone(),
                     ),
                     status: status_copy,
@@ -314,7 +314,7 @@ impl FunctionsClient {
 
                 // バイナリデータをデシリアライズ
                 let data: T =
-                    serde_json::from_str(&format!("\"{}\"", binary_str)).unwrap_or_else(|_| {
+                    serde_json::from_str(&format!("\"{binary_str}\"")).unwrap_or_else(|_| {
                         panic!("Failed to deserialize binary response as requested type")
                     });
 
@@ -424,7 +424,7 @@ impl FunctionsClient {
             if let Ok(error_details) = serde_json::from_str::<FunctionErrorDetails>(&error_body) {
                 return Err(FunctionsError::FunctionError {
                     message: error_details.message.as_ref().map_or_else(
-                        || format!("Function returned error status: {}", status),
+                        || format!("Function returned error status: {status}"),
                         |msg| msg.clone(),
                     ),
                     status,
@@ -519,7 +519,7 @@ impl FunctionsClient {
             if let Ok(error_details) = serde_json::from_str::<FunctionErrorDetails>(&error_body) {
                 return Err(FunctionsError::FunctionError {
                     message: error_details.message.as_ref().map_or_else(
-                        || format!("Function returned error status: {}", status),
+                        || format!("Function returned error status: {status}"),
                         |msg| msg.clone(),
                     ),
                     status,
@@ -685,7 +685,7 @@ impl FunctionsClient {
             if let Ok(error_details) = serde_json::from_str::<FunctionErrorDetails>(&error_body) {
                 return Err(FunctionsError::FunctionError {
                     message: error_details.message.as_ref().map_or_else(
-                        || format!("Function returned error status: {}", status_copy),
+                        || format!("Function returned error status: {status_copy}"),
                         |msg| msg.clone(),
                     ),
                     status: status_copy,
@@ -850,11 +850,11 @@ mod tests {
 
         // Arrange: Mock the API endpoint
         Mock::given(method("POST"))
-            .and(path(format!("/functions/v1/{}", function_name)))
+            .and(path(format!("/functions/v1/{function_name}")))
             .and(header("apikey", api_key))
             .and(header(
                 "Authorization",
-                format!("Bearer {}", api_key).as_str(),
+                format!("Bearer {api_key}").as_str(),
             ))
             .and(header("Content-Type", "application/json"))
             .and(body_json(&request_body))
@@ -894,11 +894,11 @@ mod tests {
 
         // Arrange: Mock the API endpoint to return an error
         Mock::given(method("POST"))
-            .and(path(format!("/functions/v1/{}", function_name)))
+            .and(path(format!("/functions/v1/{function_name}")))
             .and(header("apikey", api_key))
             .and(header(
                 "Authorization",
-                format!("Bearer {}", api_key).as_str(),
+                format!("Bearer {api_key}").as_str(),
             ))
             .and(body_json(&request_body))
             .respond_with(
@@ -960,11 +960,11 @@ mod tests {
 
         // Arrange: Mock the API endpoint
         Mock::given(method("POST"))
-            .and(path(format!("/functions/v1/{}", function_name)))
+            .and(path(format!("/functions/v1/{function_name}")))
             .and(header("apikey", api_key))
             .and(header(
                 "Authorization",
-                format!("Bearer {}", api_key).as_str(),
+                format!("Bearer {api_key}").as_str(),
             ))
             .and(header("Content-Type", "application/json")) // Default for invoke_text wrapper
             .and(body_json(&request_body))

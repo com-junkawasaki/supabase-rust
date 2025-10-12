@@ -2,7 +2,8 @@ use dotenv::dotenv;
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use std::env;
-use supabase_rust_gftd::Supabase;
+use supabase_rust_client::client::SupabaseConfig;
+use supabase_rust_client::SupabaseClientWrapper;
 use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -24,11 +25,12 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let supabase_url = env::var("SUPABASE_URL").expect("SUPABASE_URL must be set");
     let supabase_key = env::var("SUPABASE_KEY").expect("SUPABASE_KEY must be set");
 
-    println!("Using Supabase URL: {}", supabase_url);
+    println!("Using Supabase URL: {supabase_url}");
     println!("Using Supabase Key: {}", &supabase_key[..10]); // Show only the first 10 chars for security
 
     // Initialize the Supabase client
-    let supabase = Supabase::new(&supabase_url, &supabase_key);
+    let config = SupabaseConfig::new(supabase_url.as_str(), supabase_key)?;
+    let supabase = SupabaseClientWrapper::new(config)?;
 
     println!("Starting database example");
 
@@ -36,19 +38,19 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
     let test_email = format!("test-db-{}@example.com", Uuid::new_v4());
     let test_password = "password123";
 
-    println!("Signing up a test user with email: {}", test_email);
+    println!("Signing up a test user with email: {test_email}");
 
-    let sign_up_result = match supabase.auth().sign_up(&test_email, test_password).await {
+    let sign_up_result = match supabase.auth.sign_up(&test_email, test_password).await {
         Ok(result) => result,
         Err(e) => {
-            println!("Error signing up test user: {:?}", e);
+            println!("Error signing up test user: {e:?}");
             return Ok(());
         }
     };
 
     let user_id = sign_up_result.user.id.clone();
     let access_token = sign_up_result.access_token.clone();
-    println!("Created test user with ID: {}", user_id);
+    println!("Created test user with ID: {user_id}");
     println!(
         "Access token obtained (first 20 chars): {}",
         &access_token[..20]
@@ -56,7 +58,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
 
     // Example 1: Create a new task
     println!("\nExample 1: Creating a new task");
-    println!("Preparing task data with user_id: {}", user_id);
+    println!("Preparing task data with user_id: {user_id}");
 
     let task_data = serde_json::json!({
         "title": "Supabase Rust 学習",
@@ -65,7 +67,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
         "user_id": user_id
     });
 
-    println!("Task data prepared: {}", task_data);
+    println!("Task data prepared: {task_data}");
 
     // Check if we can access the tasks table
     println!("Testing if we can access the tasks table...");
@@ -80,7 +82,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             "Successfully accessed tasks table: found {} rows",
             result.len()
         ),
-        Err(e) => println!("Error accessing tasks table: {:?}", e),
+        Err(e) => println!("Error accessing tasks table: {e:?}"),
     }
 
     // Now try the insert with full error handling
@@ -91,7 +93,7 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
             println!("Sending insert request to Supabase");
             match auth_client.insert(task_data).await {
                 Ok(result) => {
-                    println!("Task created: {:?}", result);
+                    println!("Task created: {result:?}");
 
                     // Example 2: Select all tasks for the current user
                     println!("\nExample 2: Selecting user's tasks");
@@ -124,10 +126,10 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
                                         .await
                                     {
                                         Ok(update_result) => {
-                                            println!("Task updated: {:?}", update_result);
+                                            println!("Task updated: {update_result:?}");
                                         }
                                         Err(e) => {
-                                            println!("Error updating task: {:?}", e);
+                                            println!("Error updating task: {e:?}");
                                         }
                                     }
                                 }
@@ -144,26 +146,26 @@ async fn main() -> std::result::Result<(), Box<dyn std::error::Error>> {
                                 .await
                             {
                                 Ok(delete_result) => {
-                                    println!("Deleted tasks: {:?}", delete_result);
+                                    println!("Deleted tasks: {delete_result:?}");
                                 }
                                 Err(e) => {
-                                    println!("Error deleting tasks: {:?}", e);
+                                    println!("Error deleting tasks: {e:?}");
                                 }
                             }
                         }
                         Err(e) => {
-                            println!("Error selecting tasks: {:?}", e);
+                            println!("Error selecting tasks: {e:?}");
                         }
                     }
                 }
                 Err(e) => {
-                    println!("Error creating task: {:?}", e);
+                    println!("Error creating task: {e:?}");
                     println!("This could be due to RLS policy restrictions or other issues.");
                 }
             }
         }
         Err(e) => {
-            println!("Error setting up authentication: {:?}", e);
+            println!("Error setting up authentication: {e:?}");
         }
     }
 

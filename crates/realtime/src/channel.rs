@@ -167,7 +167,7 @@ impl Drop for Subscription {
         tokio::spawn(async move {
             if let Err(e) = channel_clone.unsubscribe(&id_clone).await {
                 // TODO: Log unsubscribe error properly
-                eprintln!("Error unsubscribing from channel: {}", e);
+                eprintln!("Error unsubscribing from channel: {e}");
             }
         });
     }
@@ -197,7 +197,7 @@ pub(crate) enum ChannelState {
 
 impl Channel {
     pub(crate) fn new(topic: String, client: Arc<RealtimeClient>) -> Self {
-        debug!("Channel::new created for topic: {}", topic);
+        debug!("Channel::new created for topic: {topic}");
         Self {
             topic,
             client,
@@ -339,7 +339,7 @@ pub struct ChannelBuilder<'a> {
 
 impl<'a> ChannelBuilder<'a> {
     pub(crate) fn new(client: &'a RealtimeClient, topic: &str) -> Self {
-        debug!("ChannelBuilder::new for topic: {}", topic);
+        debug!("ChannelBuilder::new for topic: {topic}");
         Self {
             client,
             topic: topic.to_string(),

@@ -22,8 +22,10 @@ async-trait = { workspace = true }
 
 # Revert to original path dependencies
 supabase-rust-auth = { workspace = true }
+supabase-rust-functions = { workspace = true }
 supabase-rust-postgrest = { workspace = true }
 supabase-rust-realtime = { workspace = true }
+supabase-rust-storage = { workspace = true }
 # Add supabase-rust-storage if needed based on SSOT
 
 # Keep anyhow dependency
