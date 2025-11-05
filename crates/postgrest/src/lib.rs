@@ -257,7 +257,7 @@ impl PostgrestClient {
         let new_select = if current_select == "*" {
             format!("*,{foreign_table}!left({foreign_column})")
         } else {
-            format!("{current_select},{column},{foreign_table}!left({foreign_column})",)
+            format!("{current_select},{column},{foreign_table}!left({foreign_column})")
         };
 
         self.query_params.insert("select".to_string(), new_select);
@@ -299,7 +299,7 @@ impl PostgrestClient {
         let new_select = if current_select == "*" {
             format!("*,{foreign_table}!fk({foreign_column})")
         } else {
-            format!("{current_select},{foreign_table}!fk({foreign_column})",)
+            format!("{current_select},{foreign_table}!fk({foreign_column})")
         };
 
         self.query_params.insert("select".to_string(), new_select);

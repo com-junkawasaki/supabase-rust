@@ -141,7 +141,7 @@ mod image_transform_examples {
 
 /// S3互換APIの例を実行
 async fn run_s3_compatible_example(
-    supabase: SupabaseClientWrapper,
+    supabase: &SupabaseClientWrapper,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
     println!("\n=== S3互換APIの例 ===\n");
 

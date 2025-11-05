@@ -124,7 +124,7 @@ impl RealtimeClient {
 
     /// 特定のトピックに対するチャンネルビルダーを作成
     #[instrument(skip(self))]
-    pub fn channel(&self, topic: &str) -> ChannelBuilder<'_> {
+    pub fn channel(&self, topic: &str) -> ChannelBuilder {
         info!(?topic, "Creating channel builder");
         ChannelBuilder::new(self, topic)
     }

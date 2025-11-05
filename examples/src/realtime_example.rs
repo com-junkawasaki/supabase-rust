@@ -33,7 +33,7 @@ struct RealtimePayload<T> {
 
 /// 高度なフィルタリング機能の例
 async fn run_advanced_filter_example(
-    supabase: SupabaseClientWrapper,
+    supabase: &SupabaseClientWrapper,
     user_id: &str,
     access_token: &str,
 ) -> std::result::Result<(), Box<dyn std::error::Error>> {
