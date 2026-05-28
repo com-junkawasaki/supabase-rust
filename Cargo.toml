@@ -27,7 +27,7 @@ thiserror = "1.0"
 url = "2.3" # Reverted URL
 base64 = "0.21"
 async-trait = "0.1"
-jsonwebtoken = "9.1"
+jsonwebtoken = "10.3"
 uuid = { version = "1.8", features = ["v4", "serde"] }
 chrono = { version = "0.4", features = ["serde"] }
 tracing = "0.1"
